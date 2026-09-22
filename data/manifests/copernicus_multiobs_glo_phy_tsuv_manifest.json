@@ -1,0 +1,133 @@
+{
+  "name": "copernicus-multiobs-arabian-sea-2024",
+  "title": "Copernicus Multi-Observation 3D Ocean Physics (Arabian Sea 2024)",
+  "description": "3D observation-derived ocean physical analysis containing temperature, salinity, geostrophic current velocities (U, V), and mixed layer depth over the Arabian Sea and North Indian Ocean upwelling corridor.",
+  "source": "Copernicus Marine Service",
+  "source_uri": "https://doi.org/10.48670/moi-00052",
+  "dataset_type": "GRIDDED_OBSERVATION",
+  "temporal_start": "2024-01-15T00:00:00Z",
+  "temporal_end": "2024-05-15T00:00:00Z",
+  "spatial_extent": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [65.0, 8.0],
+        [77.0, 8.0],
+        [77.0, 18.0],
+        [65.0, 18.0],
+        [65.0, 8.0]
+      ]
+    ]
+  },
+  "metadata_json": {
+    "product_id": "MULTIOBS_GLO_PHY_TSUV_3D_MYNRT_015_012",
+    "product_name": "Multi Observation Global Ocean 3D Temperature Salinity Height Geostrophic Current and MLD",
+    "doi": "10.48670/moi-00052",
+    "institution": "Mercator Ocean International / Copernicus Marine Service",
+    "conventions": "CF-1.8",
+    "spatial_resolution": "0.125 degree native, 0.50 degree subset",
+    "depth_levels_count": 10,
+    "depth_range_m": [0.5, 500.0],
+    "citation": "E.U. Copernicus Marine Service Information; https://doi.org/10.48670/moi-00052",
+    "license": "Copernicus Open Access Data Policy",
+    "crs": "EPSG:4326 (WGS 84)"
+  },
+  "variables": [
+    {
+      "name": "thetao",
+      "standard_name": "sea_water_potential_temperature",
+      "long_name": "Sea Water Potential Temperature",
+      "units": "°C",
+      "data_type": "float32",
+      "description": "Potential temperature across 10 depth levels in the upper ocean water column.",
+      "metadata_json": {
+        "valid_min": 5.0,
+        "valid_max": 35.0,
+        "fill_value": -9999.0
+      }
+    },
+    {
+      "name": "so",
+      "standard_name": "sea_water_salinity",
+      "long_name": "Sea Water Practical Salinity",
+      "units": "PSU",
+      "data_type": "float32",
+      "description": "Practical salinity tracking high-salinity Arabian Sea water mass dynamics.",
+      "metadata_json": {
+        "valid_min": 28.0,
+        "valid_max": 42.0,
+        "fill_value": -9999.0
+      }
+    },
+    {
+      "name": "uo",
+      "standard_name": "eastward_sea_water_velocity",
+      "long_name": "Eastward Geostrophic Sea Water Velocity",
+      "units": "m/s",
+      "data_type": "float32",
+      "description": "Zonal geostrophic current velocity component (U).",
+      "metadata_json": {
+        "valid_min": -3.0,
+        "valid_max": 3.0,
+        "fill_value": -9999.0
+      }
+    },
+    {
+      "name": "vo",
+      "standard_name": "northward_sea_water_velocity",
+      "long_name": "Northward Geostrophic Sea Water Velocity",
+      "units": "m/s",
+      "data_type": "float32",
+      "description": "Meridional geostrophic current velocity component (V).",
+      "metadata_json": {
+        "valid_min": -3.0,
+        "valid_max": 3.0,
+        "fill_value": -9999.0
+      }
+    },
+    {
+      "name": "zos",
+      "standard_name": "sea_surface_height_above_geoid",
+      "long_name": "Sea Surface Height Above Geoid",
+      "units": "m",
+      "data_type": "float32",
+      "description": "Dynamic ocean topography / geopotential surface height above reference geoid.",
+      "metadata_json": {
+        "valid_min": -2.0,
+        "valid_max": 2.0,
+        "fill_value": -9999.0
+      }
+    },
+    {
+      "name": "mlotst",
+      "standard_name": "ocean_mixed_layer_thickness_defined_by_sigma_theta",
+      "long_name": "Ocean Mixed Layer Thickness",
+      "units": "m",
+      "data_type": "float32",
+      "description": "Mixed layer depth defined by potential density criterion.",
+      "metadata_json": {
+        "valid_min": 5.0,
+        "valid_max": 200.0,
+        "fill_value": -9999.0
+      }
+    }
+  ],
+  "array_assets": [
+    {
+      "storage_format": "NETCDF4",
+      "uri": "data/processed/copernicus_multiobs_arabian_sea_2024.nc",
+      "dimension_schema": {
+        "time": 5,
+        "depth": 10,
+        "latitude": 21,
+        "longitude": 25
+      },
+      "metadata_json": {
+        "cf_version": "CF-1.8",
+        "grid_type": "regular_lon_lat",
+        "spatial_resolution_deg": 0.5,
+        "file_size_approx_kb": 120
+      }
+    }
+  ]
+}

@@ -12,6 +12,8 @@ if str(BACKEND_DIR) not in sys.path:
 
 from app.core.config import get_settings
 from app.db.base import Base
+# Ensure all models are imported so Base.metadata is populated
+import app.models  # noqa: F401
 
 # Alembic Config object
 config = context.config
@@ -24,8 +26,24 @@ if config.config_file_name is not None:
 settings = get_settings()
 config.set_main_option("sqlalchemy.url", settings.database_url)
 
-# Model metadata for future autogenerate migrations
+# Model metadata for autogenerate migrations
 target_metadata = Base.metadata
+
+# Ignore PostGIS internal tables in autogenerate
+POSTGIS_SYSTEM_TABLES = {
+    "spatial_ref_sys",
+    "geometry_columns",
+    "geography_columns",
+    "raster_columns",
+    "raster_overviews",
+}
+
+
+def include_object(object, name, type_, reflected, compare_to):
+    """Filter out PostGIS internal system tables from Alembic autogenerate."""
+    if type_ == "table" and name in POSTGIS_SYSTEM_TABLES:
+        return False
+    return True
 
 
 def run_migrations_offline() -> None:
@@ -34,6 +52,7 @@ def run_migrations_offline() -> None:
     context.configure(
         url=url,
         target_metadata=target_metadata,
+        include_object=include_object,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
     )
@@ -54,6 +73,7 @@ def run_migrations_online() -> None:
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
+            include_object=include_object,
         )
 
         with context.begin_transaction():
