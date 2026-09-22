@@ -9,9 +9,10 @@ import os
 from pathlib import Path
 import sys
 
-# Ensure backend root is on Python path
+# Ensure backend and scripts root are on Python path
 ROOT_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT_DIR / "backend"))
+sys.path.insert(0, str(ROOT_DIR / "scripts"))
 
 from app.db.session import SessionLocal
 from app.schemas.ingestion import DatasetIngestionRequest

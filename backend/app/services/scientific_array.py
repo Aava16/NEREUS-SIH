@@ -29,14 +29,46 @@ TIME_NAMES = {"time", "t", "temporal"}
 class ScientificArrayReader:
     """Low-level adapter for opening and safely inspecting NetCDF4 and Zarr scientific grid assets."""
 
+    @staticmethod
+    def _resolve_local_filepath(uri: str) -> str:
+        """Resolve a URI or filepath safely across local filesystems and project directories."""
+        if uri.startswith("file://"):
+            raw_path = uri[7:]
+        else:
+            raw_path = uri
+
+        # Remote cloud protocols (S3, GCS, HTTP) are passed through
+        if uri.startswith(("s3://", "gs://", "http://", "https://")):
+            return raw_path
+
+        # 1. Direct path check
+        if os.path.exists(raw_path):
+            return os.path.abspath(raw_path)
+
+        # 2. Check relative to current working directory
+        cwd_candidate = Path.cwd() / raw_path
+        if cwd_candidate.exists():
+            return str(cwd_candidate.resolve())
+
+        # 3. Check relative to repository root (parent of backend)
+        backend_dir = Path(__file__).resolve().parents[2]
+        repo_candidate = backend_dir.parent / raw_path
+        if repo_candidate.exists():
+            return str(repo_candidate.resolve())
+
+        # 4. Check standard data subdirectories by filename
+        filename = Path(raw_path).name
+        for sub in ["data/processed", "data/samples", "data"]:
+            candidate = backend_dir.parent / sub / filename
+            if candidate.exists():
+                return str(candidate.resolve())
+
+        return raw_path
+
     @contextmanager
     def open_dataset(self, uri: str, storage_format: str) -> Generator[xr.Dataset, None, None]:
         """Context manager opening a scientific dataset lazily with xarray."""
-        # Check local file existence if URI is a local path
-        if uri.startswith("file://"):
-            filepath = uri[7:]
-        else:
-            filepath = uri
+        filepath = self._resolve_local_filepath(uri)
 
         if not uri.startswith(("s3://", "gs://", "http://", "https://")) and not os.path.exists(filepath):
             raise HTTPException(
