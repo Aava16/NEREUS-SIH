@@ -4,7 +4,9 @@ import {
   ZoomOut, 
   RotateCcw, 
   Spline, 
-  BoxSelect
+  BoxSelect,
+  HelpCircle,
+  X
 } from 'lucide-react';
 import type { 
   GridDeliveryResponse, 
@@ -16,6 +18,7 @@ import type {
 } from '../../types';
 import { useAnalysis } from '../../context/AnalysisContext';
 import { type ColormapName, getColorRgba } from '../../utils/colormaps';
+import { getVariableDisplay } from '../../utils/variableNames';
 import { ColormapLegend } from './ColormapLegend';
 
 interface ScientificMapCanvasProps {
@@ -36,6 +39,86 @@ interface ScientificMapCanvasProps {
   transectCoords?: TransectCoords;
   onUpdateTransectCoords?: (coords: Partial<TransectCoords>) => void;
 }
+
+// Top-level canvas rendering helpers
+const drawCoordinateGrid = (ctx: CanvasRenderingContext2D, w: number, h: number) => {
+  ctx.strokeStyle = '#1e293b';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  for (let x = 60; x < w; x += 60) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, h);
+    ctx.stroke();
+  }
+  for (let y = 60; y < h; y += 60) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(w, y);
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+};
+
+const drawAxes = (
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  padLeft: number,
+  padRight: number,
+  padTop: number,
+  padBottom: number,
+  minLat: number,
+  maxLat: number,
+  minLon: number,
+  maxLon: number
+) => {
+  const plotW = width - padLeft - padRight;
+  const plotH = height - padTop - padBottom;
+
+  ctx.strokeStyle = '#2a3a5c';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(padLeft, padTop, plotW, plotH);
+
+  ctx.fillStyle = '#94a3b8';
+  ctx.font = '10px "JetBrains Mono", monospace';
+
+  // Latitude ticks
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  const latTicks = 6;
+  for (let i = 0; i <= latTicks; i++) {
+    const frac = i / latTicks;
+    const latVal = minLat + frac * (maxLat - minLat);
+    const y = padTop + (1 - frac) * plotH;
+
+    ctx.beginPath();
+    ctx.moveTo(padLeft - 5, y);
+    ctx.lineTo(padLeft, y);
+    ctx.stroke();
+
+    const suffix = latVal >= 0 ? '°N' : '°S';
+    ctx.fillText(`${Math.abs(latVal).toFixed(1)}${suffix}`, padLeft - 8, y);
+  }
+
+  // Longitude ticks
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  const lonTicks = 8;
+  for (let i = 0; i <= lonTicks; i++) {
+    const frac = i / lonTicks;
+    const lonVal = minLon + frac * (maxLon - minLon);
+    const x = padLeft + frac * plotW;
+
+    ctx.beginPath();
+    ctx.moveTo(x, padTop + plotH);
+    ctx.lineTo(x, padTop + plotH + 5);
+    ctx.stroke();
+
+    const suffix = lonVal >= 0 ? '°E' : '°W';
+    ctx.fillText(`${Math.abs(lonVal).toFixed(1)}${suffix}`, x, padTop + plotH + 8);
+  }
+};
 
 export const ScientificMapCanvas: React.FC<ScientificMapCanvasProps> = ({
   gridData: propGrid,
@@ -94,6 +177,9 @@ export const ScientificMapCanvas: React.FC<ScientificMapCanvasProps> = ({
 
   // Transect placement state
   const [transectClickStep, setTransectClickStep] = useState<0 | 1>(0);
+
+  // Dynamic "What am I seeing?" explanation toggle
+  const [showExplanation, setShowExplanation] = useState<boolean>(true);
 
   // Hover state
   const [hoverInfo, setHoverInfo] = useState<{
@@ -405,85 +491,6 @@ export const ScientificMapCanvas: React.FC<ScientificMapCanvasProps> = ({
     boxCurrent,
   ]);
 
-  const drawCoordinateGrid = (ctx: CanvasRenderingContext2D, w: number, h: number) => {
-    ctx.strokeStyle = '#1e293b';
-    ctx.lineWidth = 1;
-    ctx.setLineDash([4, 4]);
-    for (let x = 60; x < w; x += 60) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, h);
-      ctx.stroke();
-    }
-    for (let y = 60; y < h; y += 60) {
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(w, y);
-      ctx.stroke();
-    }
-    ctx.setLineDash([]);
-  };
-
-  const drawAxes = (
-    ctx: CanvasRenderingContext2D,
-    width: number,
-    height: number,
-    padLeft: number,
-    padRight: number,
-    padTop: number,
-    padBottom: number,
-    minLat: number,
-    maxLat: number,
-    minLon: number,
-    maxLon: number
-  ) => {
-    const plotW = width - padLeft - padRight;
-    const plotH = height - padTop - padBottom;
-
-    ctx.strokeStyle = '#2a3a5c';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(padLeft, padTop, plotW, plotH);
-
-    ctx.fillStyle = '#94a3b8';
-    ctx.font = '10px "JetBrains Mono", monospace';
-
-    // Latitude ticks
-    ctx.textAlign = 'right';
-    ctx.textBaseline = 'middle';
-    const latTicks = 6;
-    for (let i = 0; i <= latTicks; i++) {
-      const frac = i / latTicks;
-      const latVal = minLat + frac * (maxLat - minLat);
-      const y = padTop + (1 - frac) * plotH;
-
-      ctx.beginPath();
-      ctx.moveTo(padLeft - 5, y);
-      ctx.lineTo(padLeft, y);
-      ctx.stroke();
-
-      const suffix = latVal >= 0 ? '°N' : '°S';
-      ctx.fillText(`${Math.abs(latVal).toFixed(1)}${suffix}`, padLeft - 8, y);
-    }
-
-    // Longitude ticks
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'top';
-    const lonTicks = 8;
-    for (let i = 0; i <= lonTicks; i++) {
-      const frac = i / lonTicks;
-      const lonVal = minLon + frac * (maxLon - minLon);
-      const x = padLeft + frac * plotW;
-
-      ctx.beginPath();
-      ctx.moveTo(x, padTop + plotH);
-      ctx.lineTo(x, padTop + plotH + 5);
-      ctx.stroke();
-
-      const suffix = lonVal >= 0 ? '°E' : '°W';
-      ctx.fillText(`${Math.abs(lonVal).toFixed(1)}${suffix}`, x, padTop + plotH + 8);
-    }
-  };
-
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -696,6 +703,91 @@ export const ScientificMapCanvas: React.FC<ScientificMapCanvasProps> = ({
           <RotateCcw size={16} />
         </button>
       </div>
+
+      {/* Dynamic "What am I seeing?" Explanation Banner */}
+      {analysisMode === 'explore' && gridData && showExplanation && (
+        <div style={{
+          position: 'absolute',
+          top: '12px',
+          left: '12px',
+          maxWidth: '380px',
+          backgroundColor: 'rgba(8, 14, 30, 0.92)',
+          backdropFilter: 'blur(10px)',
+          border: '1px solid var(--border-subtle)',
+          borderRadius: 'var(--radius-sm)',
+          padding: '0.625rem 0.85rem',
+          zIndex: 10,
+          boxShadow: '0 4px 16px rgba(0, 0, 0, 0.4)',
+          fontSize: '0.75rem',
+          lineHeight: 1.45,
+          color: 'var(--text-secondary)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.25rem',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              color: 'var(--accent-cyan)',
+              fontWeight: 600,
+              fontFamily: 'var(--font-mono)',
+              fontSize: '0.6875rem',
+              letterSpacing: '0.04em',
+            }}>
+              <HelpCircle size={13} />
+              WHAT AM I SEEING?
+            </span>
+            <button
+              onClick={() => setShowExplanation(false)}
+              title="Dismiss note"
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--text-muted)',
+                cursor: 'pointer',
+                padding: '2px',
+                display: 'flex',
+                alignItems: 'center',
+              }}
+            >
+              <X size={13} />
+            </button>
+          </div>
+          <div>
+            This map shows <strong style={{ color: 'var(--text-primary)' }}>{getVariableDisplay(selectedVariable).label}</strong> ({selectedVariable}) across <strong style={{ color: 'var(--text-primary)' }}>{context.metadata?.name || 'the regional grid'}</strong>. Colors represent values{units ? ` in ${units}` : ''}.
+          </div>
+        </div>
+      )}
+
+      {analysisMode === 'explore' && !showExplanation && (
+        <button
+          onClick={() => setShowExplanation(true)}
+          title="Explain current map view"
+          style={{
+            position: 'absolute',
+            top: '12px',
+            left: '12px',
+            backgroundColor: 'rgba(15, 23, 42, 0.85)',
+            backdropFilter: 'blur(8px)',
+            border: '1px solid var(--border-default)',
+            borderRadius: 'var(--radius-sm)',
+            padding: '0.3rem 0.6rem',
+            zIndex: 10,
+            color: 'var(--accent-cyan)',
+            fontSize: '0.6875rem',
+            fontFamily: 'var(--font-mono)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.35rem',
+          }}
+        >
+          <HelpCircle size={13} />
+          <span>What am I seeing?</span>
+        </button>
+      )}
 
       {/* Mode Specific Notice Banner */}
       {analysisMode === 'transect' && (

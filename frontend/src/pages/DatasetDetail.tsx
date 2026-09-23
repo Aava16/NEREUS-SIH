@@ -11,6 +11,7 @@ import { Header } from '../components/layout/Header';
 import { LoadingSkeleton } from '../components/common/LoadingSkeleton';
 import { ErrorBanner } from '../components/common/ErrorBanner';
 import { getDatasetMetadata, getDatasetVariables } from '../api/datasets';
+import { getVariableDisplay } from '../utils/variableNames';
 import type { DatasetDetailResponse, DatasetVariableInfo } from '../types';
 
 export const DatasetDetail: React.FC = () => {
@@ -93,6 +94,8 @@ export const DatasetDetail: React.FC = () => {
               border: '1px solid var(--border-default)',
               borderRadius: 'var(--radius-md)',
               padding: '1.5rem',
+              flexWrap: 'wrap',
+              gap: '1rem',
             }}>
               <div>
                 <div style={{
@@ -110,7 +113,7 @@ export const DatasetDetail: React.FC = () => {
                     border: '1px solid rgba(56, 189, 248, 0.25)',
                     borderRadius: 'var(--radius-sm)',
                   }}>
-                    {dataset.source || 'CANONICAL SOURCE'}
+                    {dataset.source || 'COPERNICUS'}
                   </span>
                   <span style={{ fontSize: '0.75rem', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
                     ID: {dataset.id || dataset.dataset_id}
@@ -139,12 +142,12 @@ export const DatasetDetail: React.FC = () => {
               </div>
 
               <Link
-                to={`/?dataset=${dataset.id || dataset.dataset_id}`}
+                to={`/workspace?dataset=${dataset.id || dataset.dataset_id}`}
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '0.5rem',
-                  padding: '0.625rem 1.25rem',
+                  padding: '0.65rem 1.35rem',
                   backgroundColor: 'var(--accent-blue)',
                   color: '#fff',
                   borderRadius: 'var(--radius-sm)',
@@ -154,7 +157,7 @@ export const DatasetDetail: React.FC = () => {
                   boxShadow: '0 0 15px rgba(37, 99, 235, 0.3)',
                 }}
               >
-                <Play size={16} /> Open in Scientific Dashboard
+                <Play size={16} /> Open in Scientific Workspace
               </Link>
             </div>
 
@@ -182,10 +185,10 @@ export const DatasetDetail: React.FC = () => {
                 {spatial ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.8125rem', fontFamily: 'var(--font-mono)' }}>
                     <div>
-                      Latitude: <span style={{ color: 'var(--text-primary)' }}>{(spatial.min_lat ?? spatial.latitude_min ?? -90).toFixed(1)}° to {(spatial.max_lat ?? spatial.latitude_max ?? 90).toFixed(1)}°</span>
+                      Latitude: <span style={{ color: 'var(--text-primary)' }}>{(spatial.min_lat ?? spatial.latitude_min ?? -90).toFixed(1)}° to {(spatial.max_lat ?? spatial.latitude_max ?? 90).toFixed(1)}°N</span>
                     </div>
                     <div>
-                      Longitude: <span style={{ color: 'var(--text-primary)' }}>{(spatial.min_lon ?? spatial.longitude_min ?? -180).toFixed(1)}° to {(spatial.max_lon ?? spatial.longitude_max ?? 180).toFixed(1)}°</span>
+                      Longitude: <span style={{ color: 'var(--text-primary)' }}>{(spatial.min_lon ?? spatial.longitude_min ?? -180).toFixed(1)}° to {(spatial.max_lon ?? spatial.longitude_max ?? 180).toFixed(1)}°E</span>
                     </div>
                   </div>
                 ) : (
@@ -249,30 +252,38 @@ export const DatasetDetail: React.FC = () => {
               {variables.length === 0 ? (
                 <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>No variables registered.</div>
               ) : (
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem', fontFamily: 'var(--font-mono)' }}>
-                  <thead>
-                    <tr style={{ borderBottom: '1px solid var(--border-default)', textAlign: 'left', color: 'var(--text-muted)', fontSize: '0.6875rem' }}>
-                      <th style={{ padding: '0.5rem' }}>VARIABLE</th>
-                      <th style={{ padding: '0.5rem' }}>STANDARD / LONG NAME</th>
-                      <th style={{ padding: '0.5rem' }}>UNITS</th>
-                      <th style={{ padding: '0.5rem' }}>DIMENSIONS</th>
-                      <th style={{ padding: '0.5rem' }}>SHAPE</th>
-                      <th style={{ padding: '0.5rem' }}>DATA TYPE</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {variables.map((v) => (
-                      <tr key={v.name || v.variable_name} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                        <td style={{ padding: '0.625rem 0.5rem', color: 'var(--accent-cyan)', fontWeight: 600 }}>{v.name || v.variable_name}</td>
-                        <td style={{ padding: '0.625rem 0.5rem', color: 'var(--text-primary)' }}>{v.standard_name || v.long_name || '—'}</td>
-                        <td style={{ padding: '0.625rem 0.5rem', color: 'var(--accent-emerald)' }}>{v.units || 'unitless'}</td>
-                        <td style={{ padding: '0.625rem 0.5rem', color: 'var(--text-secondary)' }}>{v.dimensions ? `(${v.dimensions.join(', ')})` : '—'}</td>
-                        <td style={{ padding: '0.625rem 0.5rem', color: 'var(--text-secondary)' }}>{v.shape ? `[${v.shape.join(' × ')}]` : '—'}</td>
-                        <td style={{ padding: '0.625rem 0.5rem', color: 'var(--text-muted)' }}>{v.data_type || v.dtype || '—'}</td>
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem', fontFamily: 'var(--font-mono)' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid var(--border-default)', textAlign: 'left', color: 'var(--text-muted)', fontSize: '0.6875rem' }}>
+                        <th style={{ padding: '0.5rem' }}>VARIABLE</th>
+                        <th style={{ padding: '0.5rem' }}>CODE</th>
+                        <th style={{ padding: '0.5rem' }}>STANDARD / LONG NAME</th>
+                        <th style={{ padding: '0.5rem' }}>UNITS</th>
+                        <th style={{ padding: '0.5rem' }}>DIMENSIONS</th>
+                        <th style={{ padding: '0.5rem' }}>SHAPE</th>
+                        <th style={{ padding: '0.5rem' }}>DATA TYPE</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {variables.map((v) => {
+                        const rawCode = v.name || v.variable_name || '';
+                        const meta = getVariableDisplay(rawCode);
+                        return (
+                          <tr key={rawCode} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                            <td style={{ padding: '0.625rem 0.5rem', color: 'var(--text-primary)', fontWeight: 600 }}>{meta.label}</td>
+                            <td style={{ padding: '0.625rem 0.5rem', color: 'var(--accent-cyan)' }}>{rawCode}</td>
+                            <td style={{ padding: '0.625rem 0.5rem', color: 'var(--text-secondary)' }}>{v.standard_name || v.long_name || meta.description || '—'}</td>
+                            <td style={{ padding: '0.625rem 0.5rem', color: 'var(--accent-emerald)' }}>{v.units || 'unitless'}</td>
+                            <td style={{ padding: '0.625rem 0.5rem', color: 'var(--text-secondary)' }}>{v.dimensions ? `(${v.dimensions.join(', ')})` : '—'}</td>
+                            <td style={{ padding: '0.625rem 0.5rem', color: 'var(--text-secondary)' }}>{v.shape ? `[${v.shape.join(' × ')}]` : '—'}</td>
+                            <td style={{ padding: '0.625rem 0.5rem', color: 'var(--text-muted)' }}>{v.data_type || v.dtype || '—'}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
           </div>

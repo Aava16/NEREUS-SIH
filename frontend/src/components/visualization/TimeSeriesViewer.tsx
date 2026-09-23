@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import type { TimeSeriesDeliveryResponse, TimeSeriesPoint } from '../../types';
 import { EmptyState } from '../common/EmptyState';
+import { getVariableDisplay } from '../../utils/variableNames';
 
 interface TimeSeriesViewerProps {
   timeseriesData: TimeSeriesDeliveryResponse | null;
@@ -210,12 +211,15 @@ export const TimeSeriesViewer: React.FC<TimeSeriesViewerProps> = ({
       <div style={{ padding: '1rem', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <EmptyState
           icon="info"
-          title="No Time-Series Selected"
-          description="Click any coordinate on the spatial map to probe temporal evolution."
+          title="Select a point on the map to explore temporal trends"
+          description="Click any coordinate on the spatial map to inspect how oceanographic variables evolve across available time steps."
         />
       </div>
     );
   }
+
+  const rawVar = timeseriesData.variable || timeseriesData.variable_name;
+  const varDisplay = getVariableDisplay(rawVar);
 
   return (
     <div style={{
@@ -238,7 +242,7 @@ export const TimeSeriesViewer: React.FC<TimeSeriesViewerProps> = ({
         color: 'var(--text-secondary)',
       }}>
         <div>
-          <strong style={{ color: 'var(--accent-emerald)' }}>TIME-SERIES</strong>: {timeseriesData.variable || timeseriesData.variable_name} ({timeseriesData.units})
+          <strong style={{ color: 'var(--accent-emerald)' }}>TIME-SERIES</strong>: {varDisplay.label} ({rawVar}) {timeseriesData.units ? `[${timeseriesData.units}]` : ''}
         </div>
         <div>
           LAT: {(timeseriesData.lat ?? timeseriesData.latitude ?? 0).toFixed(2)}° | LON: {(timeseriesData.lon ?? timeseriesData.longitude ?? 0).toFixed(2)}° | DEPTH: {timeseriesData.depth ?? 0}m

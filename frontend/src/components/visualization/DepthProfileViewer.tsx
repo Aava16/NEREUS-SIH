@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import type { DepthProfileResponse } from '../../types';
 import { EmptyState } from '../common/EmptyState';
+import { getVariableDisplay } from '../../utils/variableNames';
 
 interface DepthProfileViewerProps {
   profileData: DepthProfileResponse | null;
@@ -209,12 +210,15 @@ export const DepthProfileViewer: React.FC<DepthProfileViewerProps> = ({
       <div style={{ padding: '1rem', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <EmptyState
           icon="info"
-          title="No Depth Profile Selected"
-          description="Click any coordinate on the spatial map to probe vertical water column structure."
+          title="Select a point on the map to explore the water column"
+          description="Click any coordinate on the spatial map to view vertical temperature, salinity, or parameter sounding with depth."
         />
       </div>
     );
   }
+
+  const rawVar = profileData.variable || profileData.variable_name;
+  const varDisplay = getVariableDisplay(rawVar);
 
   return (
     <div style={{
@@ -237,7 +241,7 @@ export const DepthProfileViewer: React.FC<DepthProfileViewerProps> = ({
         color: 'var(--text-secondary)',
       }}>
         <div>
-          <strong style={{ color: 'var(--accent-cyan)' }}>DEPTH PROFILE</strong>: {profileData.variable || profileData.variable_name} ({profileData.units})
+          <strong style={{ color: 'var(--accent-cyan)' }}>DEPTH PROFILE</strong>: {varDisplay.label} ({rawVar}) {profileData.units ? `[${profileData.units}]` : ''}
         </div>
         <div>
           LAT: {(profileData.lat ?? profileData.actual_latitude ?? 0).toFixed(2)}° | LON: {(profileData.lon ?? profileData.actual_longitude ?? 0).toFixed(2)}°

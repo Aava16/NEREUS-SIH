@@ -3,6 +3,7 @@ import { Info } from 'lucide-react';
 import type { GridDeliveryResponse, VariableStatistics } from '../../types';
 import { useAnalysis } from '../../context/AnalysisContext';
 import { EmptyState } from '../common/EmptyState';
+import { getVariableDisplay } from '../../utils/variableNames';
 
 interface VariableComparisonViewerProps {
   primaryVariable?: string | null;
@@ -240,13 +241,16 @@ export const VariableComparisonViewer: React.FC<VariableComparisonViewerProps> =
     }
   };
 
+  const primDisplay = getVariableDisplay(primaryVariable);
+  const secDisplay = getVariableDisplay(secondaryVariable);
+
   if (!primaryGrid || !secondaryGrid) {
     return (
       <div style={{ padding: '2rem', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <EmptyState
           icon="info"
           title="Select Two Variables to Compare"
-          description="Choose a primary variable (X) and secondary variable (Y) from the control panel to evaluate scientific correlation."
+          description="Choose Variable A (Primary X) and Variable B (Secondary Y) from the control panel to evaluate scientific correlation and difference mapping."
         />
       </div>
     );
@@ -273,18 +277,22 @@ export const VariableComparisonViewer: React.FC<VariableComparisonViewerProps> =
         borderBottom: '1px solid var(--border-subtle)',
         fontFamily: 'var(--font-mono)',
         fontSize: '0.75rem',
+        flexWrap: 'wrap',
+        gap: '0.5rem',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
           <div>
-            <span style={{ color: 'var(--text-muted)' }}>X (Primary): </span>
-            <strong style={{ color: 'var(--accent-cyan)' }}>{primaryVariable}</strong>
-            <span style={{ color: 'var(--text-muted)' }}> ({primaryGrid.units || 'unitless'})</span>
+            <span style={{ color: 'var(--text-muted)' }}>Variable A (X): </span>
+            <strong style={{ color: 'var(--accent-cyan)' }}>{primDisplay.label}</strong>
+            <span style={{ color: 'var(--text-secondary)', fontSize: '0.6875rem' }}> ({primaryVariable})</span>
+            <span style={{ color: 'var(--text-muted)' }}> {primaryGrid.units ? `[${primaryGrid.units}]` : ''}</span>
           </div>
           <span style={{ color: 'var(--border-default)' }}>vs</span>
           <div>
-            <span style={{ color: 'var(--text-muted)' }}>Y (Secondary): </span>
-            <strong style={{ color: 'var(--accent-emerald)' }}>{secondaryVariable}</strong>
-            <span style={{ color: 'var(--text-muted)' }}> ({secondaryGrid.units || 'unitless'})</span>
+            <span style={{ color: 'var(--text-muted)' }}>Variable B (Y): </span>
+            <strong style={{ color: 'var(--accent-emerald)' }}>{secDisplay.label}</strong>
+            <span style={{ color: 'var(--text-secondary)', fontSize: '0.6875rem' }}> ({secondaryVariable})</span>
+            <span style={{ color: 'var(--text-muted)' }}> {secondaryGrid.units ? `[${secondaryGrid.units}]` : ''}</span>
           </div>
         </div>
 

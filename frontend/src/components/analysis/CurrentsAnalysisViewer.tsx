@@ -213,52 +213,52 @@ export const CurrentsAnalysisViewer: React.FC<CurrentsAnalysisViewerProps> = ({
         </div>
 
         {/* Speed Magnitude */}
-        <div className="surface-card" style={{ padding: '0.5rem 0.75rem', backgroundColor: 'var(--bg-surface)', borderRadius: 'var(--radius-sm)' }}>
+        <div className="surface-card" style={{ padding: '0.625rem 0.75rem', backgroundColor: 'var(--bg-surface)', borderRadius: 'var(--radius-sm)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)' }}>
-            <span style={{ color: 'var(--accent-cyan)', fontWeight: 600 }}>SPEED MAGNITUDE</span>
+            <span style={{ color: 'var(--accent-cyan)', fontWeight: 600 }}>CURRENT SPEED (MAGNITUDE)</span>
             <span style={{ color: 'var(--text-muted)' }}>m/s</span>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.25rem', marginTop: '0.25rem', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.25rem', marginTop: '0.35rem', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)' }}>
             <div>Min: <strong style={{ color: 'var(--text-primary)' }}>{speedStats?.min?.toFixed(2) ?? '0.00'}</strong></div>
             <div>Mean: <strong style={{ color: 'var(--accent-emerald)' }}>{speedStats?.mean?.toFixed(2) ?? '—'}</strong></div>
             <div>Max: <strong style={{ color: 'var(--text-primary)' }}>{speedStats?.max?.toFixed(2) ?? '—'}</strong></div>
           </div>
         </div>
 
-        {/* U (Eastward) */}
-        <div className="surface-card" style={{ padding: '0.5rem 0.75rem', backgroundColor: 'var(--bg-surface)', borderRadius: 'var(--radius-sm)' }}>
+        {/* Eastward Current U */}
+        <div className="surface-card" style={{ padding: '0.625rem 0.75rem', backgroundColor: 'var(--bg-surface)', borderRadius: 'var(--radius-sm)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)' }}>
-            <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>U (EASTWARD)</span>
+            <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>EASTWARD CURRENT (U / UO)</span>
             <span style={{ color: 'var(--text-muted)' }}>m/s</span>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.25rem', marginTop: '0.25rem', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.25rem', marginTop: '0.35rem', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)' }}>
             <div>Min: <strong>{uStats?.min?.toFixed(2) ?? '—'}</strong></div>
             <div>Mean: <strong>{uStats?.mean?.toFixed(2) ?? '—'}</strong></div>
             <div>Max: <strong>{uStats?.max?.toFixed(2) ?? '—'}</strong></div>
           </div>
         </div>
 
-        {/* V (Northward) */}
-        <div className="surface-card" style={{ padding: '0.5rem 0.75rem', backgroundColor: 'var(--bg-surface)', borderRadius: 'var(--radius-sm)' }}>
+        {/* Northward Current V */}
+        <div className="surface-card" style={{ padding: '0.625rem 0.75rem', backgroundColor: 'var(--bg-surface)', borderRadius: 'var(--radius-sm)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)' }}>
-            <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>V (NORTHWARD)</span>
+            <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>NORTHWARD CURRENT (V / VO)</span>
             <span style={{ color: 'var(--text-muted)' }}>m/s</span>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.25rem', marginTop: '0.25rem', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.25rem', marginTop: '0.35rem', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)' }}>
             <div>Min: <strong>{vStats?.min?.toFixed(2) ?? '—'}</strong></div>
             <div>Mean: <strong>{vStats?.mean?.toFixed(2) ?? '—'}</strong></div>
             <div>Max: <strong>{vStats?.max?.toFixed(2) ?? '—'}</strong></div>
           </div>
         </div>
 
-        {/* W (Vertical) if available */}
+        {/* Vertical Current W if available */}
         {wStats && (
-          <div className="surface-card" style={{ padding: '0.5rem 0.75rem', backgroundColor: 'var(--bg-surface)', borderRadius: 'var(--radius-sm)' }}>
+          <div className="surface-card" style={{ padding: '0.625rem 0.75rem', backgroundColor: 'var(--bg-surface)', borderRadius: 'var(--radius-sm)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)' }}>
-              <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>W (VERTICAL)</span>
+              <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>VERTICAL VELOCITY (W / WO)</span>
               <span style={{ color: 'var(--text-muted)' }}>m/s</span>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.25rem', marginTop: '0.25rem', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.25rem', marginTop: '0.35rem', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)' }}>
               <div>Min: <strong>{wStats?.min?.toFixed(3) ?? '—'}</strong></div>
               <div>Mean: <strong>{wStats?.mean?.toFixed(3) ?? '—'}</strong></div>
               <div>Max: <strong>{wStats?.max?.toFixed(3) ?? '—'}</strong></div>

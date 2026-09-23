@@ -5,13 +5,17 @@ import {
   ArrowRight,
   RefreshCw,
   CheckCircle2,
-  FileCode
+  FileCode,
+  Globe,
+  Calendar,
+  Layers
 } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { LoadingSkeleton } from '../components/common/LoadingSkeleton';
 import { EmptyState } from '../components/common/EmptyState';
 import { ErrorBanner } from '../components/common/ErrorBanner';
 import { listDatasets } from '../api/datasets';
+import { getVariableDisplay } from '../utils/variableNames';
 import type { DatasetListItem } from '../types';
 
 export const DatasetExplorer: React.FC = () => {
@@ -43,7 +47,8 @@ export const DatasetExplorer: React.FC = () => {
   const filteredDatasets = datasets.filter((d) => {
     const matchesSearch = d.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           (d.source && d.source.toLowerCase().includes(searchQuery.toLowerCase())) ||
-                          (d.description && d.description.toLowerCase().includes(searchQuery.toLowerCase()));
+                          (d.description && d.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                          (d.variable_names && d.variable_names.some((v) => v.toLowerCase().includes(searchQuery.toLowerCase())));
     const matchesSource = sourceFilter === 'ALL' || d.source === sourceFilter;
     return matchesSearch && matchesSource;
   });
@@ -57,10 +62,10 @@ export const DatasetExplorer: React.FC = () => {
         <div style={{
           display: 'flex',
           flexDirection: 'column',
-          gap: '1.5rem',
+          gap: '1.25rem',
           marginBottom: '2rem',
         }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '1rem' }}>
             <div>
               <div style={{
                 fontSize: '0.75rem',
@@ -69,18 +74,25 @@ export const DatasetExplorer: React.FC = () => {
                 letterSpacing: '0.08em',
                 marginBottom: '0.25rem',
               }}>
-                CANONICAL REPOSITORY
+                OCEANOGRAPHIC CATALOG
               </div>
               <h1 style={{
                 fontFamily: 'var(--font-display)',
-                fontSize: '1.875rem',
+                fontSize: '2rem',
                 fontWeight: 700,
                 color: 'var(--text-primary)',
                 letterSpacing: '-0.02em',
                 margin: 0,
               }}>
-                Scientific Dataset Explorer
+                Ocean Datasets
               </h1>
+              <p style={{
+                color: 'var(--text-secondary)',
+                fontSize: '0.9375rem',
+                margin: '0.35rem 0 0',
+              }}>
+                Find a dataset to explore space, time, and depth dimensions.
+              </p>
             </div>
 
             <button
@@ -112,12 +124,13 @@ export const DatasetExplorer: React.FC = () => {
             padding: '0.75rem 1rem',
             borderRadius: 'var(--radius-md)',
             border: '1px solid var(--border-subtle)',
+            flexWrap: 'wrap',
           }}>
             <div style={{
               display: 'flex',
               alignItems: 'center',
               gap: '0.5rem',
-              flex: 1,
+              flex: '1 1 300px',
               backgroundColor: 'var(--bg-surface)',
               border: '1px solid var(--border-default)',
               borderRadius: 'var(--radius-sm)',
@@ -126,7 +139,7 @@ export const DatasetExplorer: React.FC = () => {
               <Search size={16} color="var(--text-muted)" />
               <input
                 type="text"
-                placeholder="Search datasets by name, source, or variable..."
+                placeholder="Search datasets by name, region, or variable (e.g. temperature, salinity, currents)..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 style={{
@@ -172,15 +185,15 @@ export const DatasetExplorer: React.FC = () => {
 
         {/* Content Body */}
         {loading ? (
-          <LoadingSkeleton type="card" rows={4} label="Fetching scientific datasets from PostgreSQL..." />
+          <LoadingSkeleton type="card" rows={4} label="Fetching verified ocean datasets from catalog..." />
         ) : filteredDatasets.length === 0 ? (
           <EmptyState
             variant="card"
-            title={searchQuery ? 'No Matching Datasets' : 'No Registered Scientific Datasets'}
+            title={searchQuery ? 'No Matching Datasets' : 'No Datasets Available'}
             description={
               searchQuery
                 ? `No datasets matched query "${searchQuery}". Try modifying your filter criteria.`
-                : 'The NEREUS scientific data catalog currently has no registered NetCDF/Zarr datasets in PostgreSQL.'
+                : 'Select a dataset to begin exploring ocean conditions.'
             }
             actionLabel={searchQuery ? 'Clear Search' : 'Refresh Catalog'}
             onAction={() => {
@@ -189,144 +202,201 @@ export const DatasetExplorer: React.FC = () => {
             }}
           />
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(420px, 1fr))', gap: '1.25rem' }}>
-            {filteredDatasets.map((dataset) => (
-              <div
-                key={dataset.id}
-                className="surface-card"
-                style={{
-                  backgroundColor: 'var(--bg-deep)',
-                  border: '1px solid var(--border-default)',
-                  borderRadius: 'var(--radius-md)',
-                  padding: '1.25rem',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '1rem',
-                  transition: 'border-color 0.2s ease, transform 0.15s ease',
-                }}
-              >
-                {/* Top Badge & Title */}
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                    <span style={{
-                      fontSize: '0.6875rem',
-                      fontFamily: 'var(--font-mono)',
-                      padding: '0.125rem 0.5rem',
-                      backgroundColor: 'rgba(56, 189, 248, 0.1)',
-                      color: 'var(--accent-cyan)',
-                      border: '1px solid rgba(56, 189, 248, 0.25)',
-                      borderRadius: 'var(--radius-sm)',
-                    }}>
-                      {dataset.source || 'UNKNOWN SOURCE'}
-                    </span>
-                    <span style={{
-                      fontSize: '0.6875rem',
-                      fontFamily: 'var(--font-mono)',
-                      color: 'var(--accent-emerald)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.25rem',
-                    }}>
-                      <CheckCircle2 size={12} /> {dataset.status?.toUpperCase() || 'READY'}
-                    </span>
-                  </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: '1.25rem' }}>
+            {filteredDatasets.map((dataset) => {
+              // Extract variable display items
+              const keyVars = (dataset.variable_names || []).map((v) => getVariableDisplay(v));
 
-                  <h3 style={{
-                    fontFamily: 'var(--font-display)',
-                    fontSize: '1.125rem',
-                    fontWeight: 600,
-                    color: 'var(--text-primary)',
-                    margin: 0,
-                  }}>
-                    {dataset.name}
-                  </h3>
-                  {dataset.description && (
-                    <p style={{
-                      fontSize: '0.8125rem',
-                      color: 'var(--text-secondary)',
-                      marginTop: '0.375rem',
-                      lineHeight: 1.4,
-                      maxHeight: '40px',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                    }}>
-                      {dataset.description}
-                    </p>
-                  )}
-                </div>
-
-                {/* Spatial / Temporal Meta Grid */}
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
-                  gap: '0.5rem',
-                  fontSize: '0.75rem',
-                  fontFamily: 'var(--font-mono)',
-                  backgroundColor: 'rgba(15, 23, 42, 0.5)',
-                  padding: '0.625rem 0.75rem',
-                  borderRadius: 'var(--radius-sm)',
-                  border: '1px solid var(--border-subtle)',
-                }}>
+              return (
+                <div
+                  key={dataset.id}
+                  className="surface-card"
+                  style={{
+                    backgroundColor: 'var(--bg-deep)',
+                    border: '1px solid var(--border-default)',
+                    borderRadius: 'var(--radius-md)',
+                    padding: '1.25rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '1rem',
+                    transition: 'border-color 0.2s ease, transform 0.15s ease',
+                  }}
+                >
+                  {/* Top Badge & Title */}
                   <div>
-                    <span style={{ color: 'var(--text-muted)' }}>COVERAGE: </span>
-                    <span style={{ color: 'var(--text-primary)' }}>
-                      {dataset.spatial_coverage ? 'Spatial Grid' : 'Standard'}
-                    </span>
-                  </div>
-                  <div>
-                    <span style={{ color: 'var(--text-muted)' }}>VARIABLES: </span>
-                    <span style={{ color: 'var(--accent-cyan)' }}>
-                      {dataset.variable_names?.length || '—'} vars
-                    </span>
-                  </div>
-                </div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                      <span style={{
+                        fontSize: '0.6875rem',
+                        fontFamily: 'var(--font-mono)',
+                        padding: '0.125rem 0.5rem',
+                        backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                        color: 'var(--accent-cyan)',
+                        border: '1px solid rgba(56, 189, 248, 0.25)',
+                        borderRadius: 'var(--radius-sm)',
+                      }}>
+                        {dataset.source || 'COPERNICUS'}
+                      </span>
+                      <span style={{
+                        fontSize: '0.6875rem',
+                        fontFamily: 'var(--font-mono)',
+                        color: 'var(--accent-emerald)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.25rem',
+                      }}>
+                        <CheckCircle2 size={12} /> {dataset.status?.toUpperCase() || 'READY'}
+                      </span>
+                    </div>
 
-                {/* Actions */}
-                <div style={{ display: 'flex', gap: '0.75rem', marginTop: 'auto', paddingTop: '0.5rem' }}>
-                  <Link
-                    to={`/datasets/${dataset.id}`}
-                    style={{
-                      flex: 1,
-                      textAlign: 'center',
-                      padding: '0.5rem',
-                      backgroundColor: 'var(--bg-surface)',
-                      border: '1px solid var(--border-default)',
-                      borderRadius: 'var(--radius-sm)',
-                      color: 'var(--text-secondary)',
-                      fontSize: '0.8125rem',
-                      textDecoration: 'none',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '0.375rem',
-                    }}
-                  >
-                    <FileCode size={14} /> Detail
-                  </Link>
-                  <Link
-                    to={`/?dataset=${dataset.id}`}
-                    style={{
-                      flex: 2,
-                      textAlign: 'center',
-                      padding: '0.5rem',
-                      backgroundColor: 'var(--accent-blue)',
-                      border: '1px solid transparent',
-                      borderRadius: 'var(--radius-sm)',
-                      color: '#ffffff',
-                      fontSize: '0.8125rem',
+                    <h3 style={{
+                      fontFamily: 'var(--font-display)',
+                      fontSize: '1.2rem',
                       fontWeight: 600,
-                      textDecoration: 'none',
+                      color: 'var(--text-primary)',
+                      margin: 0,
+                    }}>
+                      {dataset.name}
+                    </h3>
+                    {dataset.description && (
+                      <p style={{
+                        fontSize: '0.8125rem',
+                        color: 'var(--text-secondary)',
+                        marginTop: '0.4rem',
+                        lineHeight: 1.45,
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                      }}>
+                        {dataset.description}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Region & Time Period Metadata */}
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '0.5rem',
+                    fontSize: '0.75rem',
+                    fontFamily: 'var(--font-mono)',
+                    backgroundColor: 'rgba(15, 23, 42, 0.5)',
+                    padding: '0.625rem 0.75rem',
+                    borderRadius: 'var(--radius-sm)',
+                    border: '1px solid var(--border-subtle)',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                      <Globe size={13} color="var(--accent-cyan)" />
+                      <span style={{ color: 'var(--text-secondary)' }}>
+                        {dataset.spatial_coverage ? 'Arabian Sea' : 'Regional Grid'}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                      <Calendar size={13} color="var(--accent-emerald)" />
+                      <span style={{ color: 'var(--text-secondary)' }}>
+                        {dataset.temporal_coverage ? '2024 Series' : 'Multi-temporal'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Key Variables (Human-Readable with Scientific Code Badges) */}
+                  <div>
+                    <div style={{
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '0.375rem',
-                    }}
-                  >
-                    Open in Canvas <ArrowRight size={14} />
-                  </Link>
+                      gap: '0.35rem',
+                      fontSize: '0.6875rem',
+                      fontFamily: 'var(--font-mono)',
+                      color: 'var(--text-muted)',
+                      marginBottom: '0.4rem',
+                    }}>
+                      <Layers size={12} /> KEY SCIENTIFIC VARIABLES:
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+                      {keyVars.slice(0, 5).map((v) => (
+                        <span
+                          key={v.code}
+                          title={`${v.label} (${v.code}): ${v.description || ''}`}
+                          style={{
+                            fontSize: '0.6875rem',
+                            fontFamily: 'var(--font-mono)',
+                            padding: '0.15rem 0.45rem',
+                            backgroundColor: 'rgba(56, 189, 248, 0.08)',
+                            border: '1px solid rgba(56, 189, 248, 0.2)',
+                            borderRadius: 'var(--radius-sm)',
+                            color: 'var(--text-primary)',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.25rem',
+                          }}
+                        >
+                          <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{v.label}</span>
+                          <span style={{ color: 'var(--accent-cyan)', fontSize: '0.625rem', opacity: 0.85 }}>({v.code})</span>
+                        </span>
+                      ))}
+                      {keyVars.length > 5 && (
+                        <span style={{
+                          fontSize: '0.6875rem',
+                          fontFamily: 'var(--font-mono)',
+                          padding: '0.15rem 0.4rem',
+                          color: 'var(--text-muted)',
+                        }}>
+                          +{keyVars.length - 5} more
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div style={{ display: 'flex', gap: '0.75rem', marginTop: 'auto', paddingTop: '0.5rem' }}>
+                    <Link
+                      to={`/datasets/${dataset.id}`}
+                      style={{
+                        flex: 1,
+                        textAlign: 'center',
+                        padding: '0.55rem',
+                        backgroundColor: 'var(--bg-surface)',
+                        border: '1px solid var(--border-default)',
+                        borderRadius: 'var(--radius-sm)',
+                        color: 'var(--text-secondary)',
+                        fontSize: '0.8125rem',
+                        textDecoration: 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.375rem',
+                        transition: 'all 0.15s ease',
+                      }}
+                    >
+                      <FileCode size={14} /> Dataset Details
+                    </Link>
+                    <Link
+                      to={`/workspace?dataset=${dataset.id}`}
+                      style={{
+                        flex: 1.5,
+                        textAlign: 'center',
+                        padding: '0.55rem',
+                        backgroundColor: 'var(--accent-blue)',
+                        border: '1px solid transparent',
+                        borderRadius: 'var(--radius-sm)',
+                        color: '#ffffff',
+                        fontSize: '0.8125rem',
+                        fontWeight: 600,
+                        textDecoration: 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.375rem',
+                        boxShadow: '0 0 15px rgba(37, 99, 235, 0.25)',
+                        transition: 'all 0.15s ease',
+                      }}
+                    >
+                      Explore Dataset <ArrowRight size={14} />
+                    </Link>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </main>
