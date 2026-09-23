@@ -1,8 +1,34 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useMemo } from 'react';
 import { Compass } from 'lucide-react';
 import type { CurrentsAnalysisResponse, CurrentsDeliveryResponse } from '../../types';
 import { useAnalysis } from '../../context/AnalysisContext';
 import { EmptyState } from '../common/EmptyState';
+
+interface VelocityStatsSummary {
+  min: number | null;
+  mean: number | null;
+  max: number | null;
+}
+
+const computeFiniteSummary = (values: number[]): VelocityStatsSummary | null => {
+  if (!values.length) return null;
+  let min = values[0];
+  let max = values[0];
+  let sum = 0;
+
+  for (let i = 0; i < values.length; i++) {
+    const v = values[i];
+    if (v < min) min = v;
+    if (v > max) max = v;
+    sum += v;
+  }
+
+  return {
+    min,
+    mean: sum / values.length,
+    max,
+  };
+};
 
 interface CurrentsAnalysisViewerProps {
   currentsAnalysis?: CurrentsAnalysisResponse | null;
@@ -24,6 +50,66 @@ export const CurrentsAnalysisViewer: React.FC<CurrentsAnalysisViewerProps> = ({
   const onSpeedThresholdChange = propChange ?? context.setSpeedThreshold;
 
   const roseCanvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  // Derived velocity statistics: Primary source is active slice vectorData.vectors, fallback to currentsAnalysis
+  const { speedStats, uStats, vStats, wStats } = useMemo(() => {
+    const vectors = vectorData?.vectors;
+    if (vectors && vectors.length > 0) {
+      const speedVals: number[] = [];
+      const uVals: number[] = [];
+      const vVals: number[] = [];
+      const wVals: number[] = [];
+      let hasValidW = false;
+
+      for (let i = 0; i < vectors.length; i++) {
+        const vec = vectors[i];
+
+        // Prefer vector.speed calculated by backend; fallback to sqrt(u^2 + v^2 (+ w^2))
+        if (typeof vec.speed === 'number' && Number.isFinite(vec.speed)) {
+          speedVals.push(vec.speed);
+        } else if (
+          typeof vec.u === 'number' && Number.isFinite(vec.u) &&
+          typeof vec.v === 'number' && Number.isFinite(vec.v)
+        ) {
+          const spd = typeof vec.w === 'number' && Number.isFinite(vec.w)
+            ? Math.sqrt(vec.u ** 2 + vec.v ** 2 + vec.w ** 2)
+            : Math.sqrt(vec.u ** 2 + vec.v ** 2);
+          speedVals.push(spd);
+        }
+
+        if (typeof vec.u === 'number' && Number.isFinite(vec.u)) {
+          uVals.push(vec.u);
+        }
+        if (typeof vec.v === 'number' && Number.isFinite(vec.v)) {
+          vVals.push(vec.v);
+        }
+        if (typeof vec.w === 'number' && Number.isFinite(vec.w)) {
+          wVals.push(vec.w);
+          hasValidW = true;
+        }
+      }
+
+      return {
+        speedStats: computeFiniteSummary(speedVals),
+        uStats: computeFiniteSummary(uVals),
+        vStats: computeFiniteSummary(vVals),
+        wStats: hasValidW ? computeFiniteSummary(wVals) : null,
+      };
+    }
+
+    // Fallback source: Backend dataset-wide currents analysis response
+    const speed = currentsAnalysis?.speed_statistics ?? currentsAnalysis?.speed;
+    const u = currentsAnalysis?.component_statistics?.u ?? currentsAnalysis?.u;
+    const v = currentsAnalysis?.component_statistics?.v ?? currentsAnalysis?.v;
+    const w = currentsAnalysis?.component_statistics?.w ?? currentsAnalysis?.w;
+
+    return {
+      speedStats: speed ? { min: speed.min ?? null, mean: speed.mean ?? null, max: speed.max ?? null } : null,
+      uStats: u ? { min: u.min ?? null, mean: u.mean ?? null, max: u.max ?? null } : null,
+      vStats: v ? { min: v.min ?? null, mean: v.mean ?? null, max: v.max ?? null } : null,
+      wStats: w ? { min: w.min ?? null, mean: w.mean ?? null, max: w.max ?? null } : null,
+    };
+  }, [vectorData, currentsAnalysis]);
 
   // Render Directional Flow Rose Canvas
   useEffect(() => {
@@ -140,11 +226,6 @@ export const CurrentsAnalysisViewer: React.FC<CurrentsAnalysisViewerProps> = ({
     );
   }
 
-  const speedStats = currentsAnalysis?.speed;
-  const uStats = currentsAnalysis?.u;
-  const vStats = currentsAnalysis?.v;
-  const wStats = currentsAnalysis?.w;
-
   return (
     <div style={{
       display: 'grid',
@@ -219,9 +300,9 @@ export const CurrentsAnalysisViewer: React.FC<CurrentsAnalysisViewerProps> = ({
             <span style={{ color: 'var(--text-muted)' }}>m/s</span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.25rem', marginTop: '0.35rem', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)' }}>
-            <div>Min: <strong style={{ color: 'var(--text-primary)' }}>{speedStats?.min?.toFixed(2) ?? '0.00'}</strong></div>
-            <div>Mean: <strong style={{ color: 'var(--accent-emerald)' }}>{speedStats?.mean?.toFixed(2) ?? '—'}</strong></div>
-            <div>Max: <strong style={{ color: 'var(--text-primary)' }}>{speedStats?.max?.toFixed(2) ?? '—'}</strong></div>
+            <div>Min: <strong style={{ color: 'var(--text-primary)' }}>{speedStats?.min != null ? speedStats.min.toFixed(2) : '—'}</strong></div>
+            <div>Mean: <strong style={{ color: 'var(--accent-emerald)' }}>{speedStats?.mean != null ? speedStats.mean.toFixed(2) : '—'}</strong></div>
+            <div>Max: <strong style={{ color: 'var(--text-primary)' }}>{speedStats?.max != null ? speedStats.max.toFixed(2) : '—'}</strong></div>
           </div>
         </div>
 
@@ -232,9 +313,9 @@ export const CurrentsAnalysisViewer: React.FC<CurrentsAnalysisViewerProps> = ({
             <span style={{ color: 'var(--text-muted)' }}>m/s</span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.25rem', marginTop: '0.35rem', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)' }}>
-            <div>Min: <strong>{uStats?.min?.toFixed(2) ?? '—'}</strong></div>
-            <div>Mean: <strong>{uStats?.mean?.toFixed(2) ?? '—'}</strong></div>
-            <div>Max: <strong>{uStats?.max?.toFixed(2) ?? '—'}</strong></div>
+            <div>Min: <strong>{uStats?.min != null ? uStats.min.toFixed(2) : '—'}</strong></div>
+            <div>Mean: <strong>{uStats?.mean != null ? uStats.mean.toFixed(2) : '—'}</strong></div>
+            <div>Max: <strong>{uStats?.max != null ? uStats.max.toFixed(2) : '—'}</strong></div>
           </div>
         </div>
 
@@ -245,9 +326,9 @@ export const CurrentsAnalysisViewer: React.FC<CurrentsAnalysisViewerProps> = ({
             <span style={{ color: 'var(--text-muted)' }}>m/s</span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.25rem', marginTop: '0.35rem', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)' }}>
-            <div>Min: <strong>{vStats?.min?.toFixed(2) ?? '—'}</strong></div>
-            <div>Mean: <strong>{vStats?.mean?.toFixed(2) ?? '—'}</strong></div>
-            <div>Max: <strong>{vStats?.max?.toFixed(2) ?? '—'}</strong></div>
+            <div>Min: <strong>{vStats?.min != null ? vStats.min.toFixed(2) : '—'}</strong></div>
+            <div>Mean: <strong>{vStats?.mean != null ? vStats.mean.toFixed(2) : '—'}</strong></div>
+            <div>Max: <strong>{vStats?.max != null ? vStats.max.toFixed(2) : '—'}</strong></div>
           </div>
         </div>
 
@@ -259,9 +340,9 @@ export const CurrentsAnalysisViewer: React.FC<CurrentsAnalysisViewerProps> = ({
               <span style={{ color: 'var(--text-muted)' }}>m/s</span>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.25rem', marginTop: '0.35rem', fontSize: '0.6875rem', fontFamily: 'var(--font-mono)' }}>
-              <div>Min: <strong>{wStats?.min?.toFixed(3) ?? '—'}</strong></div>
-              <div>Mean: <strong>{wStats?.mean?.toFixed(3) ?? '—'}</strong></div>
-              <div>Max: <strong>{wStats?.max?.toFixed(3) ?? '—'}</strong></div>
+              <div>Min: <strong>{wStats.min != null ? wStats.min.toFixed(3) : '—'}</strong></div>
+              <div>Mean: <strong>{wStats.mean != null ? wStats.mean.toFixed(3) : '—'}</strong></div>
+              <div>Max: <strong>{wStats.max != null ? wStats.max.toFixed(3) : '—'}</strong></div>
             </div>
           </div>
         )}
@@ -269,3 +350,4 @@ export const CurrentsAnalysisViewer: React.FC<CurrentsAnalysisViewerProps> = ({
     </div>
   );
 };
+

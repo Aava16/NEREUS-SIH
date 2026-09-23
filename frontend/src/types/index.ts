@@ -293,10 +293,17 @@ export interface TemporalAnalysisResponse {
 export interface CurrentsAnalysisResponse {
   dataset_id: string;
   dataset_name: string;
-  speed: VariableStatistics;
+  asset_id?: string | null;
+  velocity_dimensions?: string;
+  variables_used?: Record<string, string>;
+  speed_statistics?: VariableStatistics;
+  direction_statistics?: Record<string, any>;
+  component_statistics?: Record<string, VariableStatistics>;
+  analyzed_at?: string;
+  speed?: VariableStatistics;
   direction?: VariableStatistics;
-  u: VariableStatistics;
-  v: VariableStatistics;
+  u?: VariableStatistics;
+  v?: VariableStatistics;
   w?: VariableStatistics;
 }
 
