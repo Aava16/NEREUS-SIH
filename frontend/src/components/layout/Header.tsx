@@ -27,7 +27,8 @@ export const Header: React.FC<HeaderProps> = ({
       try {
         const health = await checkHealth();
         if (isMounted) {
-          setApiStatus(health.status === 'healthy' ? 'healthy' : 'degraded');
+          const isApiHealthy = health.status === 'ok' || health.status === 'healthy';
+          setApiStatus(isApiHealthy ? 'healthy' : 'degraded');
         }
       } catch {
         if (isMounted) setApiStatus('offline');
@@ -36,7 +37,10 @@ export const Header: React.FC<HeaderProps> = ({
       try {
         const dbHealth = await checkDbHealth();
         if (isMounted) {
-          setDbStatus(dbHealth.status === 'healthy' ? 'healthy' : 'degraded');
+          const isDbHealthy =
+            (dbHealth.status === 'ok' || dbHealth.status === 'healthy') &&
+            dbHealth.connected === true;
+          setDbStatus(isDbHealthy ? 'healthy' : 'degraded');
         }
       } catch {
         if (isMounted) setDbStatus('offline');

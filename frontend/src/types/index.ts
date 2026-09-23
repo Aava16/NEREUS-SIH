@@ -311,6 +311,8 @@ export interface DatasetAnalysisSummaryResponse {
 export interface SystemHealth {
   status: string;
   database?: string;
+  connected?: boolean;
+  latency_ms?: number;
   version?: string;
   timestamp?: string;
 }
