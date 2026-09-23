@@ -47,3 +47,22 @@ def test_openapi_documentation_endpoint() -> None:
     assert "openapi" in data
     assert "/health" in data["paths"]
     assert "/health/db" in data["paths"]
+
+
+def test_cors_production_vercel_origin_preflight_and_get() -> None:
+    """Verify that the production Vercel frontend origin is allowed via CORS preflight and requests."""
+    # 1. Test OPTIONS preflight
+    options_headers = {
+        "Origin": "https://nereus-sih.vercel.app",
+        "Access-Control-Request-Method": "GET",
+        "Access-Control-Request-Headers": "authorization,content-type",
+    }
+    options_response = client.options("/api/v1/datasets", headers=options_headers)
+    assert options_response.status_code == 200
+    assert options_response.headers.get("access-control-allow-origin") == "https://nereus-sih.vercel.app"
+    assert "GET" in options_response.headers.get("access-control-allow-methods", "")
+
+    # 2. Test GET request with Vercel origin
+    get_response = client.get("/api/v1/datasets", headers={"Origin": "https://nereus-sih.vercel.app"})
+    assert get_response.status_code == 200
+    assert get_response.headers.get("access-control-allow-origin") == "https://nereus-sih.vercel.app"
