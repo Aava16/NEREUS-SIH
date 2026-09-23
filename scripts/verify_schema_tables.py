@@ -16,6 +16,7 @@ def verify_schema():
     tables = inspector.get_table_names(schema="public")
     print(f"Total tables found in public schema: {len(tables)}")
     
+    
     expected_tables = [
         "datasets",
         "platforms",

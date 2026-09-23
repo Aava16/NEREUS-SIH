@@ -67,16 +67,20 @@ class DatasetService:
                 filters.bbox_max_lat,  # type: ignore[arg-type]
             )
 
-        return self.repository.list_datasets(
-            db,
-            dataset_type=filters.dataset_type,
-            source=filters.source,
-            temporal_min=filters.temporal_min,
-            temporal_max=filters.temporal_max,
-            bbox=bbox,
-            limit=filters.limit,
-            offset=filters.offset,
-        )
+        try:
+            return self.repository.list_datasets(
+                db,
+                dataset_type=filters.dataset_type,
+                source=filters.source,
+                temporal_min=filters.temporal_min,
+                temporal_max=filters.temporal_max,
+                bbox=bbox,
+                limit=filters.limit,
+                offset=filters.offset,
+            )
+        except Exception as exc:
+            logger.error("Failed to query datasets catalog: %s - %s", type(exc).__name__, exc)
+            raise
 
     def create_dataset(self, db: Session, payload: DatasetCreate) -> Dataset:
         """Validate uniqueness and create a new dataset."""
